@@ -1,0 +1,215 @@
+{
+  "name": "awesome-copilot-toolkit",
+  "displayName": "Awesome Copilot Toolkit",
+  "description": "Browse and install items from github/awesome-copilot repository",
+  "version": "0.1.0",
+  "publisher": "awesome-copilot-toolkit",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "copilot",
+    "github",
+    "instructions",
+    "prompts",
+    "chatmodes"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:awesomeCopilotToolkit.browseAll",
+    "onCommand:awesomeCopilotToolkit.browseCustomInstructions",
+    "onCommand:awesomeCopilotToolkit.browseReusablePrompts",
+    "onCommand:awesomeCopilotToolkit.browseCustomChatModes",
+    "onCommand:awesomeCopilotToolkit.searchByKeywords",
+    "onCommand:awesomeCopilotToolkit.refreshIndex",
+    "onCommand:awesomeCopilotToolkit.clearCache",
+    "onCommand:awesomeCopilotToolkit.showRateLimit",
+    "onCommand:awesomeCopilotToolkit.statusBarMenu",
+    "onCommand:awesomeCopilotToolkit.installToWorkspace",
+    "onCommand:awesomeCopilotToolkit.quickSearch",
+    "onView:awesome-copilot-explorer"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "awesomeCopilotToolkit.browseAll",
+        "title": "Awesome Copilot: Browse All",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.browseCustomInstructions",
+        "title": "Awesome Copilot: Browse Custom Instructions",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.browseReusablePrompts",
+        "title": "Awesome Copilot: Browse Reusable Prompts",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.browseCustomChatModes",
+        "title": "Awesome Copilot: Browse Custom Chat Modes",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.searchByKeywords",
+        "title": "Awesome Copilot: Search by Keywords",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.refreshIndex",
+        "title": "Awesome Copilot: Refresh Index",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.clearCache",
+        "title": "Awesome Copilot: Clear Cache",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.showRateLimit",
+        "title": "Awesome Copilot: Show Rate Limit",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.statusBarMenu",
+        "title": "Awesome Copilot",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.installToWorkspace",
+        "title": "Install Copilot Item Here",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.quickSearch",
+        "title": "Quick Search Copilot Items",
+        "category": "Awesome Copilot"
+      }
+    ],
+    "configuration": {
+      "title": "Awesome Copilot Toolkit",
+      "properties": {
+        "awesomeCopilotToolkit.defaultInstallLocation": {
+          "type": "string",
+          "enum": ["workspace", "untitled", "both"],
+          "default": "workspace",
+          "description": "Default location for installing items"
+        },
+        "awesomeCopilotToolkit.cacheTtlHours": {
+          "type": "number",
+          "default": 24,
+          "minimum": 1,
+          "maximum": 168,
+          "description": "Cache TTL in hours"
+        },
+        "awesomeCopilotToolkit.useDeepLinksWhenAvailable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use deep links for chat instructions when available"
+        }
+      }
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "awesomeCopilotToolkit.browseAll",
+          "when": "true"
+        },
+        {
+          "command": "awesomeCopilotToolkit.browseCustomInstructions",
+          "when": "true"
+        },
+        {
+          "command": "awesomeCopilotToolkit.browseReusablePrompts",
+          "when": "true"
+        },
+        {
+          "command": "awesomeCopilotToolkit.browseCustomChatModes",
+          "when": "true"
+        },
+        {
+          "command": "awesomeCopilotToolkit.refreshIndex",
+          "when": "true"
+        },
+        {
+          "command": "awesomeCopilotToolkit.clearCache",
+          "when": "true"
+        },
+        {
+          "command": "awesomeCopilotToolkit.showRateLimit",
+          "when": "true"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "awesomeCopilotToolkit.installToWorkspace",
+          "when": "true",
+          "group": "awesome-copilot"
+        },
+        {
+          "command": "awesomeCopilotToolkit.quickSearch",
+          "when": "true",
+          "group": "awesome-copilot"
+        }
+      ],
+      "statusBar/toolbar": [
+        {
+          "command": "awesomeCopilotToolkit.statusBarMenu",
+          "when": "true",
+          "group": "awesome-copilot"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "awesome-copilot-sidebar",
+          "title": "Awesome Copilot",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "awesome-copilot-sidebar": [
+        {
+          "id": "awesome-copilot-explorer",
+          "name": "Copilot Items",
+          "when": "true"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "awesome-copilot-explorer",
+        "contents": "Welcome to Awesome Copilot Toolkit!\n\n[Browse All Items](command:awesomeCopilotToolkit.browseAll)\n[Search by Keywords](command:awesomeCopilotToolkit.searchByKeywords)\n[Check Rate Limit](command:awesomeCopilotToolkit.showRateLimit)",
+        "when": "true"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --target=node18",
+    "watch": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --target=node18 --watch",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-electron": "^2.3.8",
+    "esbuild": "^0.19.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "markdown-it": "^14.0.0"
+  }
+}
