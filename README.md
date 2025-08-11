@@ -169,6 +169,12 @@ Items are installed to:
 ### Quick Actions Menu
 ![Quick Actions Menu](resources/screenshots/ack-menu.png)
 
+### Preview + Install
+![Preview with Install](resources/screenshots/ack-install-instructions.png)
+
+### Preview Save Mode
+![Preview and Save Mode](resources/screenshots/ack-preview-and-save-mode.png)
+
 ### Rate Limit Indicator
 ![Rate Limit Indicator](resources/screenshots/ack-rate-limit.png)
 

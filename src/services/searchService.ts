@@ -16,10 +16,9 @@ export class SearchService {
     }
 
     return items.filter(item => {
-      // Create searchable text from item properties
+      // Only use cheap fields (title, path segments, type). Avoid description to keep on-demand fetch.
       const searchableText = [
         item.title.toLowerCase(),
-        item.description.toLowerCase(),
         item.type.toLowerCase(),
         ...item.path.toLowerCase().split(/[/\\]/)
       ].join(' ');

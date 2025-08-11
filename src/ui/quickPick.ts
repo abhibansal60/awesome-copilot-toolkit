@@ -2,17 +2,20 @@ import * as vscode from 'vscode';
 import { CatalogItem, ItemType } from '../types';
 import { PreviewService } from '../services/preview';
 import { InstallerService } from '../services/installer';
+import { IndexService } from '../services/indexService';
 import { SearchService } from '../services/searchService';
 
 export class QuickPickService {
   private readonly previewService: PreviewService;
   private readonly installerService: InstallerService;
   private readonly searchService: SearchService;
+  private readonly indexService?: IndexService;
 
-  constructor() {
+  constructor(indexService?: IndexService) {
     this.previewService = new PreviewService();
     this.installerService = new InstallerService();
     this.searchService = new SearchService();
+    this.indexService = indexService;
   }
 
   async showBrowseAll(items: CatalogItem[]): Promise<void> {
@@ -60,13 +63,21 @@ export class QuickPickService {
   }
 
   private async performKeywordSearch(items: CatalogItem[], query: string): Promise<void> {
-    const searchResults = this.searchService.searchByKeywords(items, query);
+    let searchResults = this.searchService.searchByKeywords(items, query);
     
     if (searchResults.length === 0) {
-      vscode.window.showInformationMessage(
-        `No items found matching "${query}". Try different keywords or check spelling.`
-      );
-      return;
+      // Fallback: expand index from repo tree if wired and retry
+      if (this.indexService) {
+        const expanded = await this.indexService.expandIndexByKeywords(query);
+        searchResults = this.searchService.searchByKeywords(expanded, query);
+      }
+
+      if (searchResults.length === 0) {
+        vscode.window.showInformationMessage(
+          `No items found matching "${query}". Try different keywords or check spelling.`
+        );
+        return;
+      }
     }
 
     await this.showQuickPick(searchResults, `Search Results: "${query}" (${searchResults.length} items)`);
@@ -88,8 +99,8 @@ export class QuickPickService {
 
     const quickPickItems = sortedItems.map(item => ({
       label: item.title,
-      description: `${this.getTypeLabel(item.type)} • ${item.description}`,
-      detail: `${item.path}${item.lastModified ? ` • Modified: ${new Date(item.lastModified).toLocaleDateString()}` : ''}`,
+      description: `${this.getTypeLabel(item.type)}${item.description ? ` • ${item.description}` : ''}`,
+      detail: `${item.path}`,
       item,
     }));
 
@@ -138,6 +149,14 @@ export class QuickPickService {
   }
 
   private async installItem(item: CatalogItem): Promise<void> {
+    // Hydrate rawUrl if missing (should be present from index build, but guard anyway)
+    if (!item.rawUrl) {
+      const cfg = vscode.workspace.getConfiguration('awesomeCopilotToolkit');
+      const repo = cfg.get<string>('contentRepo', 'github/awesome-copilot');
+      const branch = cfg.get<string>('contentBranch', 'main');
+      item.rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${item.path}`;
+    }
+
     const config = vscode.workspace.getConfiguration('awesomeCopilotToolkit');
     const defaultLocation = config.get<'workspace' | 'untitled' | 'both'>('defaultInstallLocation', 'workspace');
     const useDeepLinks = config.get<boolean>('useDeepLinksWhenAvailable', true);

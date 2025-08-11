@@ -20,11 +20,8 @@ export class PreviewService {
     try {
       const content = await this.fetchService.fetchFileContent(item.rawUrl);
       
-      if (item.type === 'chatmode') {
-        await this.showJsonPreview(item, content);
-      } else {
-        await this.showMarkdownPreview(item, content);
-      }
+      // Chat modes are markdown-based; render as markdown.
+      await this.showMarkdownPreview(item, content);
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to load preview: ${error}`);
     }
@@ -47,26 +44,33 @@ export class PreviewService {
     panel.webview.html = fullHtml;
 
     // Handle messages from webview
-    panel.webview.onDidReceiveMessage(
-      message => {
-        switch (message.command) {
-          case 'openBuiltInPreview':
-            this.openBuiltInPreview(item);
-            break;
-          case 'copyContent':
-            vscode.env.clipboard.writeText(content);
-            vscode.window.showInformationMessage('Content copied to clipboard');
-            break;
-          case 'openRaw':
-            vscode.env.openExternal(vscode.Uri.parse(item.rawUrl));
-            break;
-          case 'openGitHub':
-            const githubUrl = `https://github.com/github/awesome-copilot/blob/main/${item.path}`;
-            vscode.env.openExternal(vscode.Uri.parse(githubUrl));
-            break;
-        }
+    panel.webview.onDidReceiveMessage(async message => {
+      switch (message.command) {
+        case 'openBuiltInPreview':
+          this.openBuiltInPreview(item);
+          break;
+        case 'copyContent':
+          await vscode.env.clipboard.writeText(content);
+          vscode.window.showInformationMessage('Content copied to clipboard');
+          break;
+        case 'openRaw':
+          vscode.env.openExternal(vscode.Uri.parse(item.rawUrl));
+          break;
+        case 'openGitHub':
+          const githubUrl = `https://github.com/github/awesome-copilot/blob/main/${item.path}`;
+          vscode.env.openExternal(vscode.Uri.parse(githubUrl));
+          break;
+        case 'install':
+          // Reuse InstallerService to install on demand
+          const installer = new (await import('./installer')).InstallerService();
+          try {
+            await installer.installItem(item, { location: 'workspace', useDeepLinks: true });
+          } catch (e) {
+            vscode.window.showErrorMessage(`Install failed: ${e}`);
+          }
+          break;
       }
-    );
+    });
   }
 
   private async showJsonPreview(item: CatalogItem, content: string): Promise<void> {
@@ -212,6 +216,7 @@ export class PreviewService {
           <div class="actions">
             <button class="btn" onclick="openBuiltInPreview()">Open with Built-in Preview</button>
             <button class="btn" onclick="copyContent()">Copy Content</button>
+            <button class="btn" onclick="installItem()">Install</button>
             <button class="btn" onclick="openRaw()">Open Raw</button>
             <button class="btn" onclick="openGitHub()">View on GitHub</button>
           </div>
@@ -236,6 +241,10 @@ export class PreviewService {
           
           function openGitHub() {
             vscode.postMessage({ command: 'openGitHub' });
+          }
+
+          function installItem() {
+            vscode.postMessage({ command: 'install' });
           }
         </script>
       </body>
@@ -345,9 +354,12 @@ export class PreviewService {
   }
 
   private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   private async openBuiltInPreview(item: CatalogItem): Promise<void> {

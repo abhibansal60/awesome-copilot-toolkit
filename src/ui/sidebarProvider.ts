@@ -13,8 +13,8 @@ export class SidebarProvider implements vscode.TreeDataProvider<CopilotTreeItem>
   private readonly previewService: PreviewService;
   private readonly installerService: InstallerService;
 
-  constructor(context: vscode.ExtensionContext) {
-    this.indexService = new IndexService(context);
+  constructor(context: vscode.ExtensionContext, indexService: IndexService) {
+    this.indexService = indexService;
     this.previewService = new PreviewService();
     this.installerService = new InstallerService();
     

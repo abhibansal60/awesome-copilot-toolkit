@@ -31,6 +31,9 @@ export class IndexService {
       if (cached && this.isCacheValid(cached.updatedAt, cacheTtlHours)) {
         return cached.items;
       }
+    } else {
+      // Clear cache when force refresh to ensure a fresh tree fetch
+      this.clearCache();
     }
 
     try {
@@ -64,61 +67,46 @@ export class IndexService {
   }
 
   private async fetchAllItems(): Promise<CatalogItem[]> {
-    const directories: Array<{ path: string; type: ItemType }> = [
-      { path: 'instructions', type: 'instruction' },
-      { path: 'prompts', type: 'prompt' },
-      { path: 'chatmodes', type: 'chatmode' },
-    ];
-
-    const allItems: CatalogItem[] = [];
-    const etags: Record<string, string> = {};
     const config = vscode.workspace.getConfiguration('awesomeCopilotToolkit');
-    const maxItems = Math.max(1, config.get<number>('maxItems', 5));
-    let remaining = maxItems;
+    const maxItems = Math.max(1, config.get<number>('maxItems', 10));
 
-    for (const { path, type } of directories) {
-      if (remaining <= 0) { break; }
-      try {
-        const cachedEtag = this.getCachedEtag(path);
-        const { items, etag } = await this.fetchService.fetchDirectoryContents(path, cachedEtag);
-        
-        if (etag) {
-          etags[path] = etag;
-        }
+    // One-shot tree fetch (significantly fewer API calls)
+    const tree = await this.fetchService.fetchFullTree();
 
-        // Filter for files with correct extensions
-        const filteredItems = items.filter(item => 
-          item.type === 'file' && this.hasCorrectExtension(item.name, type)
-        );
-
-        // Take only up to remaining items to reduce API calls for descriptions/commits
-        const limitedItems = filteredItems.slice(0, Math.max(0, remaining));
-
-        // Convert to CatalogItem format
-        const catalogItems = await Promise.all(
-          limitedItems.map(async (item) => {
-            const lastModified = await this.fetchService.fetchLastCommit(item.path);
-            const description = await this.extractDescription(item.download_url, type);
-            
-            return {
-              id: this.generateId(item.name, type),
-              type,
-              title: this.extractTitle(item.name, type),
-              path: item.path,
-              rawUrl: item.download_url,
-              lastModified: lastModified || '',
-              description,
-              sha: item.sha,
-            };
-          })
-        );
-
-        allItems.push(...catalogItems);
-        remaining -= catalogItems.length;
-      } catch (error) {
-        vscode.window.showErrorMessage(`Failed to fetch ${type}s: ${error}`);
+    // Map tree entries to our three folders and file patterns
+    const candidates: Array<{ path: string; type: ItemType } > = [];
+    for (const entry of tree) {
+      if (entry.type !== 'blob') continue;
+      if (entry.path.startsWith('instructions/') && this.hasCorrectExtension(entry.path.split('/').pop() || '', 'instruction')) {
+        candidates.push({ path: entry.path, type: 'instruction' });
+      } else if (entry.path.startsWith('prompts/') && this.hasCorrectExtension(entry.path.split('/').pop() || '', 'prompt')) {
+        candidates.push({ path: entry.path, type: 'prompt' });
+      } else if (entry.path.startsWith('chatmodes/') && this.hasCorrectExtension(entry.path.split('/').pop() || '', 'chatmode')) {
+        candidates.push({ path: entry.path, type: 'chatmode' });
       }
     }
+
+    // Take up to maxItems to reduce per-file metadata requests
+    const limited = candidates.slice(0, Math.max(1, maxItems));
+
+    const allItems: CatalogItem[] = await Promise.all(limited.map(async ({ path, type }) => {
+      const filename = path.split('/').pop() || path;
+      const rawUrl = `https://raw.githubusercontent.com/${vscode.workspace.getConfiguration('awesomeCopilotToolkit').get('contentRepo', 'github/awesome-copilot')}/${vscode.workspace.getConfiguration('awesomeCopilotToolkit').get('contentBranch', 'main')}/${path}`;
+      // On-demand hydration: do not fetch content or commits here to save API calls
+      const lastModified = '';
+      const description = '';
+
+      return {
+        id: this.generateId(filename, type),
+        type,
+        title: this.extractTitle(filename, type),
+        path,
+        rawUrl,
+        lastModified,
+        description,
+        sha: '',
+      };
+    }));
 
     return allItems;
   }
@@ -243,5 +231,79 @@ export class IndexService {
 
   private notifyIndexChanged(): void {
     this.indexChangeCallbacks.forEach(callback => callback());
+  }
+
+  /**
+   * Expand the index by fetching repo tree and adding files that match the query keywords.
+   * This does not fetch file contents; it only adds lightweight entries.
+   */
+  async expandIndexByKeywords(query: string): Promise<CatalogItem[]> {
+    const keywords = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(k => k.length > 0);
+
+    // Current items (from cache if available)
+    const existing = this.getCachedCatalog()?.items ?? [];
+
+    // One-shot tree fetch
+    const tree = await this.fetchService.fetchFullTree();
+
+    const candidates: Array<{ path: string; type: ItemType }> = [];
+    for (const entry of tree) {
+      if (entry.type !== 'blob') continue;
+      const lowerPath = entry.path.toLowerCase();
+      const filename = entry.path.split('/').pop() || entry.path;
+
+      // Only three content roots
+      let type: ItemType | undefined;
+      if (lowerPath.startsWith('instructions/') && this.hasCorrectExtension(filename, 'instruction')) {
+        type = 'instruction';
+      } else if (lowerPath.startsWith('prompts/') && this.hasCorrectExtension(filename, 'prompt')) {
+        type = 'prompt';
+      } else if (lowerPath.startsWith('chatmodes/') && this.hasCorrectExtension(filename, 'chatmode')) {
+        type = 'chatmode';
+      }
+      if (!type) continue;
+
+      // Match all keywords against path segments + filename
+      const haystack = [type, ...entry.path.toLowerCase().split(/[/\\]/)].join(' ');
+      const matches = keywords.every(k => haystack.includes(k));
+      if (matches) {
+        candidates.push({ path: entry.path, type });
+      }
+    }
+
+    const config = vscode.workspace.getConfiguration('awesomeCopilotToolkit');
+    const maxItems = Math.max(1, config.get<number>('maxItems', 5));
+    const limited = candidates.slice(0, Math.max(1, maxItems));
+
+    const repo = config.get<string>('contentRepo', 'github/awesome-copilot');
+    const branch = config.get<string>('contentBranch', 'main');
+
+    const newItems: CatalogItem[] = limited.map(({ path, type }) => {
+      const filename = path.split('/').pop() || path;
+      const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${path}`;
+      return {
+        id: this.generateId(filename, type),
+        type,
+        title: this.extractTitle(filename, type),
+        path,
+        rawUrl,
+        lastModified: '',
+        description: '',
+        sha: '',
+      };
+    });
+
+    // Merge de-duplicating by path
+    const byPath = new Map<string, CatalogItem>();
+    for (const item of [...existing, ...newItems]) {
+      byPath.set(item.path, item);
+    }
+    const merged = Array.from(byPath.values());
+
+    this.cacheCatalog(merged);
+    return merged;
   }
 }

@@ -9,10 +9,10 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log('Awesome Copilot Toolkit extension is now active!');
 
   const indexService = new IndexService(context);
-  const quickPickService = new QuickPickService();
+  const quickPickService = new QuickPickService(indexService);
   const telemetryService = new TelemetryService(context);
   const statusBarService = new StatusBarService();
-  const sidebarProviderInstance = new SidebarProvider(context);
+  const sidebarProviderInstance = new SidebarProvider(context, indexService);
 
   // Register commands
   const commands = [

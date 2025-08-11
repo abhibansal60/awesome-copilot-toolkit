@@ -111,9 +111,19 @@
           "default": true,
           "description": "Use deep links for chat instructions when available"
         },
+        "awesomeCopilotToolkit.contentRepo": {
+          "type": "string",
+          "default": "github/awesome-copilot",
+          "description": "GitHub repo to source content from (format: owner/repo)"
+        },
+        "awesomeCopilotToolkit.contentBranch": {
+          "type": "string",
+          "default": "main",
+          "description": "Branch of the content repository"
+        },
         "awesomeCopilotToolkit.maxItems": {
           "type": "number",
-          "default": 5,
+          "default": 15,
           "minimum": 1,
           "maximum": 1000,
           "description": "Maximum number of items to load (to reduce API usage)"
