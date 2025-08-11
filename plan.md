@@ -7,11 +7,11 @@ Build a TypeScript VS Code extension that lets users browse and install items fr
 - Enable discovery and installation of:
   - Custom Instructions: instructions/*.instructions.md
   - Reusable Prompts: prompts/*.prompt.md
-  - Custom Chat Modes: chatmodes/*.chatmode.json
+  - Custom Chat Modes: chatmodes/*.chatmode.md
 - Deliver a smooth VS Code UI:
   - Command Palette browsing
   - Quick Pick search and filtering
-  - Detail preview for Markdown and JSON
+  - Detail preview for Markdown
   - One-click install into workspace
 
 ## Tech Stack
@@ -30,7 +30,7 @@ Build a TypeScript VS Code extension that lets users browse and install items fr
 - Build a local catalog for three content types:
   - instructions/*.instructions.md
   - prompts/*.prompt.md
-  - chatmodes/*.chatmode.json
+  - chatmodes/*.chatmode.md
 - Fetch lists from GitHub (default branch main) using:
   - GitHub REST API: /repos/github/awesome-copilot/contents/?ref=main
   - Or raw.githubusercontent.com as fallback
@@ -65,9 +65,8 @@ Build a TypeScript VS Code extension that lets users browse and install items fr
 - Markdown items:
   - Render in a WebviewPanel using markdown-it
   - Option to open with VS Code’s built-in markdown preview
-- JSON chat modes:
-  - Pretty-print with syntax highlighting
-  - Summary panel (name/description fields if present)
+  - Chat modes:
+  - Markdown preview with syntax highlighting
 - Actions:
   - Copy content
   - Install
@@ -77,9 +76,9 @@ Build a TypeScript VS Code extension that lets users browse and install items fr
 ### 4) One-click Install
 
 - Destinations in workspace:
-  - .vscode/copilot-instructions/.instructions.md
-  - .vscode/copilot-prompts/.prompt.md
-  - .vscode/copilot-chatmodes/.chatmode.json
+  - .github/copilot-instructions/.instructions.md
+  - .github/copilot-prompts/.prompt.md
+  - .github/copilot-chatmodes/.chatmode.md
 - Behaviors:
   - Ensure directories exist; write with overwrite allowed
   - If no workspace open, create Untitled file fallback
@@ -159,7 +158,7 @@ Build a TypeScript VS Code extension that lets users browse and install items fr
 
 ### Index Building
 
-- Use GitHub REST API:
+  - Use GitHub REST API:
   - GET https://api.github.com/repos/github/awesome-copilot/contents/instructions?ref=main
   - GET https://api.github.com/repos/github/awesome-copilot/contents/prompts?ref=main
   - GET https://api.github.com/repos/github/awesome-copilot/contents/chatmodes?ref=main
@@ -169,7 +168,7 @@ Build a TypeScript VS Code extension that lets users browse and install items fr
   - Use commits API to get latest commit for the path (first page only)
 - Description extraction:
   - Markdown: fetch first ~2KB and take first heading/paragraph
-  - JSON: parse name/description fields if present
+  - Chat modes: read first heading/paragraph from markdown
 
 ### Caching
 
@@ -188,9 +187,9 @@ Build a TypeScript VS Code extension that lets users browse and install items fr
 ### Installation
 
 - Write files into:
-  - .vscode/copilot-instructions/
-  - .vscode/copilot-prompts/
-  - .vscode/copilot-chatmodes/
+  - .github/copilot-instructions/
+  - .github/copilot-prompts/
+  - .github/copilot-chatmodes/
 - Use vscode.workspace.fs.writeFile with create/overwrite behavior
 - Handle no-folder-opened by creating Untitled document
 

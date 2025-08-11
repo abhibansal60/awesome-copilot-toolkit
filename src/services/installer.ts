@@ -56,15 +56,15 @@ export class InstallerService {
     }
 
     const workspaceFolder = vscode.workspace.workspaceFolders[0];
-    const installPath = this.getInstallPath(item, workspaceFolder.uri);
+    const dirUri = this.getInstallDir(item, workspaceFolder.uri);
+    const fileUri = vscode.Uri.joinPath(dirUri, this.getFilename(item));
     
-    // Ensure directory exists
-    const dirUri = vscode.Uri.joinPath(installPath, '..');
+    // Ensure directory exists (creates .github/<subfolder> when missing)
     await vscode.workspace.fs.createDirectory(dirUri);
 
     // Write file
     const data = new TextEncoder().encode(content);
-    await vscode.workspace.fs.writeFile(installPath, data);
+    await vscode.workspace.fs.writeFile(fileUri, data);
   }
 
   private async installAsUntitled(item: CatalogItem, content: string): Promise<void> {
@@ -92,10 +92,9 @@ export class InstallerService {
     }
   }
 
-  private getInstallPath(item: CatalogItem, workspaceUri: vscode.Uri): vscode.Uri {
-    const filename = this.getFilename(item);
+  private getInstallDir(item: CatalogItem, workspaceUri: vscode.Uri): vscode.Uri {
     const subfolder = this.getSubfolder(item.type);
-    return vscode.Uri.joinPath(workspaceUri, '.vscode', subfolder, filename);
+    return vscode.Uri.joinPath(workspaceUri, '.github', subfolder);
   }
 
   private getFilename(item: CatalogItem): string {
@@ -122,7 +121,7 @@ export class InstallerService {
       case 'prompt':
         return 'markdown';
       case 'chatmode':
-        return 'json';
+        return 'markdown';
       default:
         return 'plaintext';
     }
@@ -134,7 +133,7 @@ export class InstallerService {
     }
 
     const workspaceFolder = vscode.workspace.workspaceFolders[0];
-    const filePath = this.getInstallPath(item, workspaceFolder.uri);
+    const filePath = vscode.Uri.joinPath(this.getInstallDir(item, workspaceFolder.uri), this.getFilename(item));
     
     try {
       const document = await vscode.workspace.openTextDocument(filePath);
@@ -150,7 +149,7 @@ export class InstallerService {
     }
 
     const workspaceFolder = vscode.workspace.workspaceFolders[0];
-    const filePath = this.getInstallPath(item, workspaceFolder.uri);
+    const filePath = vscode.Uri.joinPath(this.getInstallDir(item, workspaceFolder.uri), this.getFilename(item));
     
     try {
       await vscode.commands.executeCommand('revealInExplorer', filePath);
@@ -165,7 +164,7 @@ export class InstallerService {
     }
 
     const workspaceFolder = vscode.workspace.workspaceFolders[0];
-    const filePath = this.getInstallPath(item, workspaceFolder.uri);
+    const filePath = vscode.Uri.joinPath(this.getInstallDir(item, workspaceFolder.uri), this.getFilename(item));
     const relativePath = vscode.workspace.asRelativePath(filePath);
     
     await vscode.env.clipboard.writeText(relativePath);

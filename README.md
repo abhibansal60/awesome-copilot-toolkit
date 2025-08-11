@@ -45,8 +45,8 @@ A VS Code extension that lets you browse and install items from the [github/awes
 - Install to workspace for easy access
 
 ### Custom Chat Modes
-- Explore custom chat mode configurations (`.chatmode.json`)
-- JSON preview with syntax highlighting
+- Explore custom chat mode configurations (`.chatmode.md`)
+- Markdown preview with syntax highlighting
 - Install to workspace for project-specific chat modes
 
 ## Commands
@@ -154,9 +154,9 @@ The extension provides several configuration options:
 ### Workspace Installation
 
 Items are installed to:
-- `.vscode/copilot-instructions/` - Custom instructions
-- `.vscode/copilot-prompts/` - Reusable prompts  
-- `.vscode/copilot-chatmodes/` - Custom chat modes
+- `.github/copilot-instructions/` - Custom instructions
+- `.github/copilot-prompts/` - Reusable prompts  
+- `.github/copilot-chatmodes/` - Custom chat modes
 
 ## Screenshots
 
