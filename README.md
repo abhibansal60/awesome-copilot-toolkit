@@ -149,7 +149,7 @@ The extension provides several configuration options:
 1. Select an item from the browse view
 2. Choose "Install" from the action menu
 3. Select installation location (workspace, untitled, or both)
-4. Items are installed to `.vscode/copilot-*` folders in your workspace
+4. Items are installed to `.github/copilot-*` folders in your workspace
 
 ### Workspace Installation
 
