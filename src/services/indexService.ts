@@ -72,8 +72,12 @@ export class IndexService {
 
     const allItems: CatalogItem[] = [];
     const etags: Record<string, string> = {};
+    const config = vscode.workspace.getConfiguration('awesomeCopilotToolkit');
+    const maxItems = Math.max(1, config.get<number>('maxItems', 5));
+    let remaining = maxItems;
 
     for (const { path, type } of directories) {
+      if (remaining <= 0) { break; }
       try {
         const cachedEtag = this.getCachedEtag(path);
         const { items, etag } = await this.fetchService.fetchDirectoryContents(path, cachedEtag);
@@ -87,9 +91,12 @@ export class IndexService {
           item.type === 'file' && this.hasCorrectExtension(item.name, type)
         );
 
+        // Take only up to remaining items to reduce API calls for descriptions/commits
+        const limitedItems = filteredItems.slice(0, Math.max(0, remaining));
+
         // Convert to CatalogItem format
         const catalogItems = await Promise.all(
-          filteredItems.map(async (item) => {
+          limitedItems.map(async (item) => {
             const lastModified = await this.fetchService.fetchLastCommit(item.path);
             const description = await this.extractDescription(item.download_url, type);
             
@@ -107,6 +114,7 @@ export class IndexService {
         );
 
         allItems.push(...catalogItems);
+        remaining -= catalogItems.length;
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to fetch ${type}s: ${error}`);
       }

@@ -110,6 +110,13 @@
           "type": "boolean",
           "default": true,
           "description": "Use deep links for chat instructions when available"
+        },
+        "awesomeCopilotToolkit.maxItems": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of items to load (to reduce API usage)"
         }
       }
     },

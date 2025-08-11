@@ -2,6 +2,24 @@
 
 A VS Code extension that lets you browse and install items from the [github/awesome-copilot](https://github.com/github/awesome-copilot) repository. Discover and install Custom Instructions, Reusable Prompts, and Custom Chat Modes directly within VS Code.
 
+## Table of Contents
+
+- [Features](#features)
+- [Content Types](#content-types)
+- [Commands](#commands)
+- [Installation](#installation)
+- [Access Methods](#access-methods)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Screenshots](#screenshots)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+- [Changelog](#changelog)
+- [Rate Limiting](#rate-limiting)
+- [Support](#support)
+- [Privacy](#privacy)
+
 ## Features
 
 - **Multiple Access Methods**: Status bar, sidebar panel, command palette, and context menus
@@ -142,10 +160,17 @@ Items are installed to:
 
 ## Screenshots
 
-> **Note**: Screenshots will be added here showing the extension in action:
-> - Browse interface with search and filtering
-> - Preview panels for markdown and JSON content
-> - Installation workflow and success notifications
+### Sidebar Explorer
+![Sidebar Explorer](resources/screenshots/ack-sidebar.png)
+
+### Status Bar Menu
+![Status Bar Menu](resources/screenshots/ack-bottom-menu.png)
+
+### Quick Actions Menu
+![Quick Actions Menu](resources/screenshots/ack-menu.png)
+
+### Rate Limit Indicator
+![Rate Limit Indicator](resources/screenshots/ack-rate-limit.png)
 
 ## Development
 
