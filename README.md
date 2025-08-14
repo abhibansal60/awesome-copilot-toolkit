@@ -19,6 +19,7 @@ A VS Code extension that lets you browse and install items from the [github/awes
 - [Rate Limiting](#rate-limiting)
 - [Support](#support)
 - [Privacy](#privacy)
+ - [MCP Server](#mcp-server)
 
 ## Features
 
@@ -253,3 +254,27 @@ This extension:
 - Only makes requests to GitHub's public API
 - Caches data locally with configurable TTL
 - Does not collect or transmit personal information
+
+## MCP Server
+
+This repo includes a Model Context Protocol server that mirrors the extension features for programmatic access, plus a sample client.
+
+Quick start:
+
+```bash
+# Build server
+cd mcp-server && npm install && npm run build
+
+# Build and run sample client
+cd ../clients/sample-client && npm install && npm run build && npm start
+```
+
+Configure GitHub auth and repo via env vars to avoid rate limits:
+
+```powershell
+$Env:GITHUB_TOKEN = "<your_token>"
+$Env:AWESOME_COPILOT_REPO = "github/awesome-copilot"
+$Env:AWESOME_COPILOT_BRANCH = "main"
+```
+
+See `mcp-server/README.md` and `clients/sample-client/README.md` for more.
