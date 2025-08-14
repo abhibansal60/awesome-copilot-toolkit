@@ -30,6 +30,8 @@
     "onCommand:awesomeCopilotToolkit.statusBarMenu",
     "onCommand:awesomeCopilotToolkit.installToWorkspace",
     "onCommand:awesomeCopilotToolkit.quickSearch",
+    "onCommand:awesomeCopilotToolkit.installOrStartMcpServer",
+    "onCommand:awesomeCopilotToolkit.checkMcpCompatibility",
     "onView:awesome-copilot-explorer"
   ],
   "contributes": {
@@ -88,6 +90,16 @@
         "command": "awesomeCopilotToolkit.quickSearch",
         "title": "Quick Search Copilot Items",
         "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.installOrStartMcpServer",
+        "title": "Awesome Copilot: Install/Start MCP Server",
+        "category": "Awesome Copilot"
+      },
+      {
+        "command": "awesomeCopilotToolkit.checkMcpCompatibility",
+        "title": "Awesome Copilot: Check MCP Compatibility",
+        "category": "Awesome Copilot"
       }
     ],
     "configuration": {
@@ -127,6 +139,16 @@
           "minimum": 1,
           "maximum": 1000,
           "description": "Maximum number of items to load (to reduce API usage)"
+        },
+        "awesomeCopilotToolkit.mcp.serverCommand": {
+          "type": "string",
+          "default": "npx mcp-awesome-copilot-server serve",
+          "description": "Command to start the MCP server (or leave empty to use an already running endpoint)"
+        },
+        "awesomeCopilotToolkit.mcp.minimumProtocolVersion": {
+          "type": "string",
+          "default": "1.0",
+          "description": "Minimum supported protocol version"
         }
       }
     },

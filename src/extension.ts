@@ -4,6 +4,7 @@ import { QuickPickService } from './ui/quickPick';
 import { TelemetryService } from './services/telemetry';
 import { StatusBarService } from './services/statusBar';
 import { SidebarProvider } from './ui/sidebarProvider';
+import { spawn } from 'child_process';
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log('Awesome Copilot Toolkit extension is now active!');
@@ -13,6 +14,34 @@ export function activate(context: vscode.ExtensionContext): void {
   const telemetryService = new TelemetryService(context);
   const statusBarService = new StatusBarService();
   const sidebarProviderInstance = new SidebarProvider(context, indexService);
+
+  async function runHandshake(): Promise<{ serverVersion: string; protocolVersions: string[]; capabilities: string[] } | null> {
+    const cfg = vscode.workspace.getConfiguration('awesomeCopilotToolkit');
+    const serverCmd = cfg.get<string>('mcp.serverCommand', 'npx mcp-awesome-copilot-server serve');
+    const exe = serverCmd.split(' ')[0] || 'npx';
+    const args = serverCmd.split(' ').slice(1);
+    // Run the same command but with HANDSHAKE=1 so the server prints JSON and exits
+    return new Promise((resolve) => {
+      const proc = spawn(exe, args, { env: { ...process.env, HANDSHAKE: '1' } });
+      let out = '';
+      let err = '';
+      const timeout = setTimeout(() => {
+        try { proc.kill(); } catch {}
+        resolve(null);
+      }, 15000);
+      proc.stdout.on('data', (d) => { out += d.toString(); });
+      proc.stderr.on('data', (d) => { err += d.toString(); });
+      proc.on('close', () => {
+        clearTimeout(timeout);
+        try {
+          const json = JSON.parse(out.trim());
+          resolve(json);
+        } catch {
+          resolve(null);
+        }
+      });
+    });
+  }
 
   // Register commands
   const commands = [
@@ -203,6 +232,36 @@ export function activate(context: vscode.ExtensionContext): void {
         telemetryService.trackError('quick_search_failed', String(error));
         vscode.window.showErrorMessage(`Failed to perform quick search: ${error}`);
       }
+    }),
+
+    vscode.commands.registerCommand('awesomeCopilotToolkit.installOrStartMcpServer', async () => {
+      telemetryService.trackCommandExecuted('installOrStartMcpServer');
+      const cfg = vscode.workspace.getConfiguration('awesomeCopilotToolkit');
+      const serverCmd = cfg.get<string>('mcp.serverCommand', 'npx mcp-awesome-copilot-server serve');
+      const terminal = vscode.window.createTerminal({ name: 'MCP Server' });
+      terminal.show(true);
+      terminal.sendText(serverCmd);
+      vscode.window.showInformationMessage('Started MCP server in integrated terminal.');
+    }),
+
+    vscode.commands.registerCommand('awesomeCopilotToolkit.checkMcpCompatibility', async () => {
+      telemetryService.trackCommandExecuted('checkMcpCompatibility');
+      const progress = vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'Checking MCP server compatibility...', cancellable: false }, async () => {
+        const resp = await runHandshake();
+        if (!resp) {
+          vscode.window.showErrorMessage('Could not obtain MCP handshake. Ensure the server is installed: npx mcp-awesome-copilot-server');
+          return;
+        }
+        const min = vscode.workspace.getConfiguration('awesomeCopilotToolkit').get<string>('mcp.minimumProtocolVersion', '1.0');
+        const ok = resp.protocolVersions.includes(min || '1.0');
+        const details = `Server ${resp.serverVersion} | Protocols ${resp.protocolVersions.join(', ')} | Capabilities: ${resp.capabilities.join(', ')}`;
+        if (ok) {
+          vscode.window.showInformationMessage(`MCP compatible. ${details}`);
+        } else {
+          vscode.window.showWarningMessage(`MCP protocol mismatch. Requires ${min}. ${details}`);
+        }
+      });
+      await progress;
     }),
   ];
 

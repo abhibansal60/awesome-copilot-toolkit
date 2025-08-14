@@ -19,7 +19,7 @@ A VS Code extension that lets you browse and install items from the [github/awes
 - [Rate Limiting](#rate-limiting)
 - [Support](#support)
 - [Privacy](#privacy)
- - [MCP Server](#mcp-server)
+- [MCP Server](#mcp-server)
 
 ## Features
 
@@ -107,6 +107,8 @@ The extension provides several configuration options:
 - `awesomeCopilotToolkit.defaultInstallLocation`: Choose where to install items (`workspace`, `untitled`, or `both`)
 - `awesomeCopilotToolkit.cacheTtlHours`: Set cache TTL in hours (default: 24)
 - `awesomeCopilotToolkit.useDeepLinksWhenAvailable`: Enable deep linking for chat instructions (default: true)
+- `awesomeCopilotToolkit.mcp.serverCommand`: Command to start the MCP server (default: `npx mcp-awesome-copilot-server serve`)
+- `awesomeCopilotToolkit.mcp.minimumProtocolVersion`: Minimum supported protocol version (default: `1.0`)
 
 ## Usage
 
@@ -179,6 +181,16 @@ Items are installed to:
 ### Rate Limit Indicator
 ![Rate Limit Indicator](resources/screenshots/ack-rate-limit.png)
 
+## MCP Server
+
+This extension can optionally connect to a standalone MCP server that exposes the same content for agent tooling.
+
+- Start the server: run `Awesome Copilot: Install/Start MCP Server` (defaults to `npx mcp-awesome-copilot-server serve`).
+- Check compatibility: run `Awesome Copilot: Check MCP Compatibility`.
+- Minimum protocol: `1.0`.
+
+See the separate repo `[mcp-awesome-copilot](file:///c:/Users/Administrator/git/mcp-awesome-copilot/README.md)` for server details.
+ 
 ## Development
 
 ### Prerequisites
