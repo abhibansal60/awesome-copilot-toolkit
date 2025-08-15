@@ -263,6 +263,232 @@ export function activate(context: vscode.ExtensionContext): void {
       });
       await progress;
     }),
+
+    vscode.commands.registerCommand('awesomeCopilotToolkit.showDiagnostics', async () => {
+      try {
+        telemetryService.trackCommandExecuted('showDiagnostics');
+        
+        // Get diagnostics from VS Code's diagnostic collection
+        const diagnostics = vscode.languages.getDiagnostics();
+        
+        if (diagnostics.length === 0) {
+          vscode.window.showInformationMessage('No diagnostics found in the current workspace.');
+          return;
+        }
+        
+        // Create a webview to show diagnostics
+        const panel = vscode.window.createWebviewPanel(
+          'extensionDiagnostics',
+          'Extension Diagnostics',
+          vscode.ViewColumn.One,
+          {
+            enableScripts: false,
+            retainContextWhenHidden: true
+          }
+        );
+        
+        // Generate diagnostics HTML
+        let diagnosticsHtml = '<h2>VS Code Diagnostics</h2>';
+        let totalIssues = 0;
+        
+        for (const [uri, fileDiagnostics] of diagnostics) {
+          if (fileDiagnostics.length > 0) {
+            totalIssues += fileDiagnostics.length;
+            diagnosticsHtml += `<h3>${uri.path}</h3><ul>`;
+            
+            for (const diagnostic of fileDiagnostics) {
+              const severity = diagnostic.severity === vscode.DiagnosticSeverity.Error ? 'Error' :
+                             diagnostic.severity === vscode.DiagnosticSeverity.Warning ? 'Warning' :
+                             diagnostic.severity === vscode.DiagnosticSeverity.Information ? 'Info' : 'Hint';
+              
+              diagnosticsHtml += `<li><strong>${severity}</strong> (Line ${diagnostic.range.start.line + 1}): ${diagnostic.message}</li>`;
+            }
+            
+            diagnosticsHtml += '</ul>';
+          }
+        }
+        
+        if (totalIssues === 0) {
+          diagnosticsHtml += '<p>No issues found in current files.</p>';
+        } else {
+          diagnosticsHtml = `<p><strong>Total Issues: ${totalIssues}</strong></p>` + diagnosticsHtml;
+        }
+        
+        panel.webview.html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: var(--vscode-font-family); padding: 20px; }
+              h2 { color: var(--vscode-foreground); }
+              h3 { color: var(--vscode-textLink-foreground); margin-top: 20px; }
+              ul { margin-left: 20px; }
+              li { margin: 5px 0; }
+            </style>
+          </head>
+          <body>
+            ${diagnosticsHtml}
+          </body>
+          </html>
+        `;
+        
+      } catch (error) {
+        telemetryService.trackError('show_diagnostics_failed', String(error));
+        vscode.window.showErrorMessage(`Failed to show diagnostics: ${error}`);
+      }
+    }),
+
+    vscode.commands.registerCommand('awesomeCopilotToolkit.showDebugLogs', async () => {
+      try {
+        telemetryService.trackCommandExecuted('showDebugLogs');
+        
+        // Show both output channels
+        const actions = [
+          'Extension Logs',
+          'Telemetry Logs', 
+          'Both Logs'
+        ];
+        
+        const selection = await vscode.window.showQuickPick(actions, {
+          placeHolder: 'Select which logs to view...',
+          title: 'Debug Logs'
+        });
+        
+        if (!selection) return;
+        
+        const extensionChannel = vscode.window.createOutputChannel('Awesome Copilot Toolkit');
+        const telemetryChannel = vscode.window.createOutputChannel('Awesome Copilot Toolkit Telemetry');
+        
+        switch (selection) {
+          case 'Extension Logs':
+            extensionChannel.show();
+            break;
+          case 'Telemetry Logs':
+            telemetryChannel.show();
+            break;
+          case 'Both Logs':
+            // Create a combined view panel
+            const panel = vscode.window.createWebviewPanel(
+              'debugLogs',
+              'Debug Logs',
+              vscode.ViewColumn.One,
+              {
+                enableScripts: true,
+                retainContextWhenHidden: true
+              }
+            );
+            
+            panel.webview.html = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <style>
+                  body { 
+                    font-family: var(--vscode-font-family); 
+                    padding: 20px;
+                    background-color: var(--vscode-editor-background);
+                    color: var(--vscode-editor-foreground);
+                  }
+                  .log-section { 
+                    margin-bottom: 30px; 
+                    border: 1px solid var(--vscode-panel-border);
+                    border-radius: 4px;
+                    padding: 15px;
+                  }
+                  .log-title { 
+                    color: var(--vscode-textLink-foreground); 
+                    margin-bottom: 10px;
+                    font-weight: bold;
+                  }
+                  .log-content {
+                    font-family: var(--vscode-editor-font-family);
+                    font-size: var(--vscode-editor-font-size);
+                    background-color: var(--vscode-textCodeBlock-background);
+                    padding: 10px;
+                    border-radius: 3px;
+                    overflow-x: auto;
+                    white-space: pre-wrap;
+                    max-height: 300px;
+                    overflow-y: auto;
+                  }
+                  .refresh-btn {
+                    background-color: var(--vscode-button-background);
+                    color: var(--vscode-button-foreground);
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    margin-bottom: 20px;
+                  }
+                  .refresh-btn:hover {
+                    background-color: var(--vscode-button-hoverBackground);
+                  }
+                </style>
+              </head>
+              <body>
+                <h2>Extension Debug Logs</h2>
+                <button class="refresh-btn" onclick="refreshLogs()">Refresh Logs</button>
+                
+                <div class="log-section">
+                  <div class="log-title">Extension Logs</div>
+                  <div class="log-content" id="extension-logs">
+                    Extension logs are available in the Output panel (View > Output > Awesome Copilot Toolkit)
+                  </div>
+                </div>
+                
+                <div class="log-section">
+                  <div class="log-title">Telemetry Logs</div>
+                  <div class="log-content" id="telemetry-logs">
+                    Telemetry logs are available in the Output panel (View > Output > Awesome Copilot Toolkit Telemetry)
+                  </div>
+                </div>
+                
+                <div class="log-section">
+                  <div class="log-title">Quick Actions</div>
+                  <button class="refresh-btn" onclick="openExtensionLogs()">Open Extension Output</button>
+                  <button class="refresh-btn" onclick="openTelemetryLogs()">Open Telemetry Output</button>
+                </div>
+                
+                <script>
+                  const vscode = acquireVsCodeApi();
+                  
+                  function refreshLogs() {
+                    vscode.postMessage({ command: 'refresh' });
+                  }
+                  
+                  function openExtensionLogs() {
+                    vscode.postMessage({ command: 'openExtension' });
+                  }
+                  
+                  function openTelemetryLogs() {
+                    vscode.postMessage({ command: 'openTelemetry' });
+                  }
+                </script>
+              </body>
+              </html>
+            `;
+            
+            panel.webview.onDidReceiveMessage(message => {
+              switch (message.command) {
+                case 'refresh':
+                  vscode.window.showInformationMessage('Logs refreshed. Check the Output panels for latest content.');
+                  break;
+                case 'openExtension':
+                  extensionChannel.show();
+                  break;
+                case 'openTelemetry':
+                  telemetryService.showOutput();
+                  break;
+              }
+            });
+            break;
+        }
+        
+      } catch (error) {
+        telemetryService.trackError('show_debug_logs_failed', String(error));
+        vscode.window.showErrorMessage(`Failed to show debug logs: ${error}`);
+      }
+    }),
   ];
 
   // Add commands to context subscriptions

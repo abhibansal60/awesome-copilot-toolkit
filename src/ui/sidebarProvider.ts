@@ -46,7 +46,9 @@ export class SidebarProvider implements vscode.TreeDataProvider<CopilotTreeItem>
         new CategoryTreeItem('Custom Chat Modes', 'chatmode', this.getItemsByType('chatmode')),
         new ActionTreeItem('Refresh Index', 'refresh', '$(refresh)'),
         new ActionTreeItem('Search by Keywords', 'search', '$(search)'),
-        new ActionTreeItem('Show Rate Limit', 'rateLimit', '$(info)')
+        new ActionTreeItem('Show Rate Limit', 'rateLimit', '$(info)'),
+        new ActionTreeItem('VS Code Diagnostics', 'diagnostics', '$(checklist)'),
+        new ActionTreeItem('Debug Logs', 'debugLogs', '$(output)')
       ];
     }
 
@@ -72,6 +74,12 @@ export class SidebarProvider implements vscode.TreeDataProvider<CopilotTreeItem>
         break;
       case 'rateLimit':
         vscode.commands.executeCommand('awesomeCopilotToolkit.showRateLimit');
+        break;
+      case 'diagnostics':
+        vscode.commands.executeCommand('awesomeCopilotToolkit.showDiagnostics');
+        break;
+      case 'debugLogs':
+        vscode.commands.executeCommand('awesomeCopilotToolkit.showDebugLogs');
         break;
       case 'preview':
         if (item instanceof ItemTreeItem) {

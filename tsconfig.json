@@ -13,7 +13,7 @@
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedSideEffect": true
+    "noUncheckedSideEffectImports": true
   },
   "exclude": ["node_modules", ".vscode-test"]
 }
